@@ -158,20 +158,27 @@ PLIST_CONTENT="<?xml version=\"1.0\" encoding=\"UTF-8\"?>
     <string>com.qubetics.myservice</string>
     <key>ProgramArguments</key>
     <array>
-        <string>${INSTALL_PATH}cosmovisor</string>
-            <string>run</string>
-        <string>start</string>
-        <string>--home</string>
-        <string>${HOMEDIR}</string>
+        <string>/bin/bash</string>
+        <string>-c</string>
+        <string>source ~/.profile && ${INSTALL_PATH}cosmovisor run start --home ${HOMEDIR}</string>
     </array>
     <key>RunAtLoad</key>
-    <false/>
+    <true/>
     <key>KeepAlive</key>
-    <false/>
+    <true/>
     <key>StandardOutPath</key>
     <string>${HOME}/logfile.log</string>
     <key>StandardErrorPath</key>
-    <string>${HOME}/another_logfile.log</string>
+    <string>${HOME}/error.log</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${HOME}/go/bin</string>
+        <key>DAEMON_NAME</key>
+        <string>qubeticsd</string>
+        <key>DAEMON_HOME</key>
+        <string>${HOMEDIR}</string>
+    </dict>
 </dict>
 </plist>"
 
@@ -185,9 +192,13 @@ sudo mv /tmp/com.qubetics.myservice.plist "$PLIST_PATH"
 sudo chown $USER "$PLIST_PATH"
 sudo chmod 644 "$PLIST_PATH"
 
-# Load and start the launch agent
+# Unload if already loaded
 launchctl unload "$PLIST_PATH" 2>/dev/null || true
+
+# Load and start the launch agent
 launchctl load "$PLIST_PATH"
 launchctl start com.qubetics.myservice
-launchctl enable com.qubetics.myservice
+
+# Check the logs
+# echo "Checking service logs..."
 # tail -f $HOME/logfile.log
