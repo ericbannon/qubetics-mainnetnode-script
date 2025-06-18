@@ -6,7 +6,6 @@
 #  exit 1
 #fi
 current_path=$(pwd)
-#bash  $current_path/install-go.sh 
 
 source $HOME/.bashrc
 ulimit -n 16384
@@ -22,8 +21,8 @@ BINARY="qubeticsd"
 INSTALL_PATH="/usr/local/bin/"
 # INSTALL_PATH="/root/go/bin/"
 
-# Check if the OS is Ubuntu and the version is either 20.04 or 22.04
-if [ "$OS" == "Ubuntu" ] && [ "$VERSION" == "20.04" -o "$VERSION" == "22.04" ]; then
+# Check if the OS is Ubuntu and the version is either 22.04 or 24.04
+if [ "$OS" == "Ubuntu" ] && [ "$VERSION" == "22.04" -o "$VERSION" == "24.04" ]; then
   # Copy and set executable permissions
   current_path=$(pwd)
   
@@ -130,7 +129,6 @@ fi
   jq '.app_state["staking"]["params"]["unbonding_time"]="1209600s"' >"$TMP_GENESIS" "$GENESIS" && mv "$TMP_GENESIS" "$GENESIS"
   jq '.app_state["slashing"]["params"]["downtime_jail_duration"]="600s"' >"$TMP_GENESIS" "$GENESIS" && mv "$TMP_GENESIS" "$GENESIS"
   jq '.app_state["distribution"]["params"]["community_tax"]="0.000000000000000000"' "$GENESIS" >"$TMP_GENESIS" && mv "$TMP_GENESIS" "$GENESIS"
-  #jq '.app_state["gov"]["params"]["expedited_voting_period"]="1200s"' >"$TMP_GENESIS" "$GENESIS" && mv "$TMP_GENESIS" "$GENESIS"
   jq '.app_state["gov"]["params"]["min_deposit"][0]["amount"]="1000000000000000000000"' >"$TMP_GENESIS" "$GENESIS" && mv "$TMP_GENESIS" "$GENESIS"
   jq '.app_state["slashing"]["params"]["signed_blocks_window"]="100000"' >"$TMP_GENESIS" "$GENESIS" && mv "$TMP_GENESIS" "$GENESIS"
 
@@ -140,8 +138,8 @@ fi
 
 	#changes status in app,config files
     sed -i 's/timeout_commit = "3s"/timeout_commit = "6s"/g' "$CONFIG"
-    #sed -i 's/pruning = "default"/pruning = "custom"/g' "$APP_TOML"
-    sed -i 's/pruning-keep-recent = "0".tmp-qubeticsd/pruning-keep-recent = "100000"/g' "$APP_TOML"
+    sed -i 's/pruning = "default"/pruning = "custom"/g' "$APP_TOML"
+    sed -i 's/pruning-keep-recent = "0"/pruning-keep-recent = "100000"/g' "$APP_TOML"
     sed -i 's/pruning-interval = "0"/pruning-interval = "100"/g' "$APP_TOML"
     sed -i 's/seeds = ""/seeds = ""/g' "$CONFIG"
     sed -i 's/prometheus = false/prometheus = true/' "$CONFIG"
@@ -163,12 +161,7 @@ fi
     sed -i 's/127.0.0.1/0.0.0.0/g' "$CLIENT"
     sed -i 's/\[\]/["*"]/g' "$CONFIG"
 	sed -i 's/\["\*",\]/["*"]/g' "$CONFIG"
-  #sed -i 's/enable = false/enable = true/g' "$CONFIG"
 
-# sed -i 's/rpc_servers \s*=\s* ""/rpc_servers = ""/g' "$CONFIG"
-# sed -i 's/trust_hash \s*=\s* ""/trust_hash = "8223EF205275D355369D43391DA33A7AD7355932B50E50A7C092A0729084C739"/g' "$CONFIG"
-# sed -i 's/trust_height = 0/trust_height = 5063000/g' "$CONFIG"
-# sed -i 's/trust_period = "112h0m0s"/trust_period = "168h0m0s"/g' "$CONFIG"
 sed -i 's/flush_throttle_timeout = "100ms"/flush_throttle_timeout = "10ms"/g' "$CONFIG"
 sed -i 's/peer_gossip_sleep_duration = "100ms"/peer_gossip_sleep_duration = "10ms"/g' "$CONFIG"
 
@@ -229,5 +222,4 @@ WantedBy=multi-user.target'> /etc/systemd/system/qubeticschain.service"
 
 sudo systemctl daemon-reload
 sudo systemctl enable qubeticschain.service
-# qubeticsd tendermint unsafe-reset-all --home $HOMEDIR
 sudo systemctl start qubeticschain.service
