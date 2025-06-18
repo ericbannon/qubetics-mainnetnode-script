@@ -159,8 +159,8 @@ PLIST_CONTENT="<?xml version=\"1.0\" encoding=\"UTF-8\"?>
     <key>ProgramArguments</key>
     <array>
         <string>${INSTALL_PATH}cosmovisor</string>
+            <string>run</string>
         <string>start</string>
-        <string>run</string>
         <string>--home</string>
         <string>${HOMEDIR}</string>
     </array>
