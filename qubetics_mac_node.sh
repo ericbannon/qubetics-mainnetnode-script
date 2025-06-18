@@ -97,6 +97,7 @@ if [[ $overwrite == "y" || $overwrite == "Y" ]]; then
   qubeticsd init $MONIKER -o --chain-id $CHAINID --home "$HOMEDIR"
 
   #changes status in app,config files
+  sed -i '' 's/timeout_commit = "3s"/timeout_commit = "6s"/g' "$CONFIG"
   sed -i '' 's/seeds = ""/seeds = ""/g' "$CONFIG"
   sed -i '' 's/prometheus = false/prometheus = true/' "$CONFIG"
   sed -i '' 's/prometheus-retention-time  = "0"/prometheus-retention-time  = "1000000000000"/g' "$APP_TOML"

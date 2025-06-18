@@ -138,9 +138,6 @@ fi
 
 	#changes status in app,config files
     sed -i 's/timeout_commit = "3s"/timeout_commit = "6s"/g' "$CONFIG"
-    sed -i 's/pruning = "default"/pruning = "custom"/g' "$APP_TOML"
-    sed -i 's/pruning-keep-recent = "0"/pruning-keep-recent = "100000"/g' "$APP_TOML"
-    sed -i 's/pruning-interval = "0"/pruning-interval = "100"/g' "$APP_TOML"
     sed -i 's/seeds = ""/seeds = ""/g' "$CONFIG"
     sed -i 's/prometheus = false/prometheus = true/' "$CONFIG"
     sed -i 's/experimental_websocket_write_buffer_size = 200/experimental_websocket_write_buffer_size = 600/' "$CONFIG"
