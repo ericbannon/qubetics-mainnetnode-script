@@ -45,7 +45,7 @@ fi
 
 # Check if the installation path exists
 if [ -d "$INSTALL_PATH" ]; then
-  cp "$BUILD_PATH$BINARY" "$INSTALL_PATH" && chmod +x "${INSTALL_PATH}${BINARY}"
+  sudo cp "$BUILD_PATH$BINARY" "$INSTALL_PATH" && sudo chmod +x "${INSTALL_PATH}${BINARY}"
   echo "$BINARY installed or updated successfully!"
 else
   echo "Installation path $INSTALL_PATH does not exist. Please create it."
