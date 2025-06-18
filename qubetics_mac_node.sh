@@ -1,39 +1,57 @@
 #!/bin/bash
 current_path=$(pwd)
-source ~/.zshrc
+source ~/.profile
 ulimit -n 46384
+# Check for go installation
+if ! command -v go >/dev/null 2>&1; then
+  echo "Go is not installed. Please install Go first."
+  exit 1
+fi
 go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@v1.5.0
 # Get OS and version
 OS="$(uname -s)"
 ARCH="$(uname -m)"
+if [ "$OS" != "Darwin" ]; then
+  echo "This script only supports macOS (Darwin)."
+  exit 1
+fi
 OS_VERSION=$(sw_vers -productVersion)
 BUILD_VERSION=$(sw_vers -buildVersion)
 echo "macOS version: $OS_VERSION (Build $BUILD_VERSION)"
 
+# Check for supported macOS versions (14.x or 15.x)
+MAJOR_VERSION=$(echo "$OS_VERSION" | cut -d. -f1)
+if [ "$MAJOR_VERSION" != "14" ] && [ "$MAJOR_VERSION" != "15" ]; then
+  echo "Only macOS 14 (Sonoma) and 15 are supported."
+  exit 1
+fi
+
 # Define the binary and installation paths
 BINARY="qubeticsd"
 INSTALL_PATH="$HOME/go/bin/"
+BUILD_PATH="$current_path/macos${MAJOR_VERSION}build/"
 
-# Check the OS 
-if [ "$OS" == "Darwin" ]; then
-  current_path=$(pwd)
-  # Update package lists and install necessary packages
-  # brew update
-  echo "Checking brew"
-  
-  # Check if the installation path exists
-  if [ -d "$INSTALL_PATH" ]; then
-  sudo cp "$current_path/macSonoma14build/$BINARY" "$INSTALL_PATH" && sudo chmod +x "${INSTALL_PATH}${BINARY}"
-    echo "$BINARY installed or updated successfully!"
-  else
-    echo "Installation path $INSTALL_PATH does not exist. Please create it."
-    exit 1
-  fi
-  else
-  echo "Please check the OS version support; at this time, only mac ventura 13 are supported."
+# Check if the build directory exists
+if [ ! -d "$BUILD_PATH" ]; then
+  echo "Build directory $BUILD_PATH does not exist. Please ensure it is created and contains the $BINARY binary."
   exit 1
-  fi
-#==========================================================================================================================================
+fi
+
+# Check if the binary exists in the build directory
+if [ ! -f "$BUILD_PATH$BINARY" ]; then
+  echo "Binary $BINARY not found in $BUILD_PATH. Please ensure it is present."
+  exit 1
+fi
+
+# Check if the installation path exists
+if [ -d "$INSTALL_PATH" ]; then
+  cp "$BUILD_PATH$BINARY" "$INSTALL_PATH" && chmod +x "${INSTALL_PATH}${BINARY}"
+  echo "$BINARY installed or updated successfully!"
+else
+  echo "Installation path $INSTALL_PATH does not exist. Please create it."
+  exit 1
+fi
+#==========================================================================
 # read -r MONIKER
 KEYS="john"
 CHAINID="qubetics_9030-1"
@@ -56,11 +74,11 @@ set -e
 
 # User prompt if an existing local node configuration is found.
 if [ -d "$HOMEDIR" ]; then
-	printf "\nAn existing folder at '%s' was found. You can choose to delete this folder and start a new local node with new keys from genesis. When declined, the existing local node is started. \n" "$HOMEDIR"
-	echo "Overwrite the existing configuration and start a new local node? [y/n]"
-	read -r overwrite
+  printf "\nAn existing folder at '%s' was found. You can choose to delete this folder and start a new local node with new keys from genesis. When declined, the existing local node is started. \n" "$HOMEDIR"
+  echo "Overwrite the existing configuration and start a new local node? [y/n]"
+  read -r overwrite
 else
-	overwrite="Y"
+  overwrite="Y"
 fi
 
 # Setup local node if overwrite is set to Yes, otherwise skip setup
@@ -69,63 +87,62 @@ if [[ $overwrite == "y" || $overwrite == "Y" ]]; then
 	sudo rm -rf "$HOMEDIR"
   current_path=$(pwd)
 
-	# Set client config
-	qubeticsd config keyring-backend $KEYRING --home "$HOMEDIR"
-	qubeticsd config chain-id $CHAINID --home "$HOMEDIR"
-  echo "===========================Copy these keys with mnemonics aand save it in safe place ==================================="
-	qubeticsd keys add $KEYS --keyring-backend $KEYRING --algo $KEYALGO --home "$HOMEDIR"
+  # Set client config
+  qubeticsd config keyring-backend $KEYRING --home "$HOMEDIR"
+  qubeticsd config chain-id $CHAINID --home "$HOMEDIR"
+  echo "===========================Copy these keys with mnemonics and save it in safe place ==================================="
+  qubeticsd keys add $KEYS --keyring-backend $KEYRING --algo $KEYALGO --home "$HOMEDIR"
   echo "========================================================================================================================"
-	echo "========================================================================================================================"
-	qubeticsd init $MONIKER -o --chain-id $CHAINID --home "$HOMEDIR"
+  echo "========================================================================================================================"
+  qubeticsd init $MONIKER -o --chain-id $CHAINID --home "$HOMEDIR"
 
-	#changes status in app,config files
-        sed -i '' 's/seeds = ""/seeds = ""/g' "$CONFIG"
-        sed -i '' 's/prometheus = false/prometheus = true/' "$CONFIG"
-        sed -i '' 's/prometheus-retention-time  = "0"/prometheus-retention-time  = "1000000000000"/g' "$APP_TOML"
-        sed -i '' 's/enabled = false/enabled = true/g' "$APP_TOML"
-        sed -i '' 's/enable = false/enable = true/g' "$APP_TOML"
-        sed -i '' 's/swagger = false/swagger = true/g' "$APP_TOML"
-        sed -i '' 's/enabled-unsafe-cors = false/enabled-unsafe-cors = true/g' "$APP_TOML"
-        sed -i '' 's/pruning-keep-recent = "0".tmp-qubeticsd/pruning-keep-recent = "100000"/g' "$APP_TOML"
-        sed -i '' 's/pruning-interval = "0"/pruning-interval = "100"/g' "$APP_TOML"
+  #changes status in app,config files
+  sed -i '' 's/seeds = ""/seeds = ""/g' "$CONFIG"
+  sed -i '' 's/prometheus = false/prometheus = true/' "$CONFIG"
+  sed -i '' 's/prometheus-retention-time  = "0"/prometheus-retention-time  = "1000000000000"/g' "$APP_TOML"
+  sed -i '' 's/enabled = false/enabled = true/g' "$APP_TOML"
+  sed -i '' 's/enable = false/enable = true/g' "$APP_TOML"
+  sed -i '' 's/swagger = false/swagger = true/g' "$APP_TOML"
+  sed -i '' 's/enabled-unsafe-cors = false/enabled-unsafe-cors = true/g' "$APP_TOML"
+  sed -i '' 's/pruning-keep-recent = "0".tmp-qubeticsd/pruning-keep-recent = "100000"/g' "$APP_TOML"
+  sed -i '' 's/pruning-interval = "0"/pruning-interval = "100"/g' "$APP_TOML"
 
-	      sed -i '' 's/localhost/0.0.0.0/g' "$APP_TOML"
-        sed -i '' 's/localhost/0.0.0.0/g' "$CONFIG"
-        sed -i '' 's/localhost/0.0.0.0/g' "$CLIENT"
-        sed -i '' 's/127.0.0.1/0.0.0.0/g' "$APP_TOML"
-        sed -i '' 's/127.0.0.1/0.0.0.0/g' "$CONFIG"
-        sed -i '' 's/127.0.0.1/0.0.0.0/g' "$CLIENT"
-        sed -i '' 's/\[\]/["*"]/g' "$CONFIG"
-	      sed -i '' 's/\["\*",\]/["*"]/g' "$CONFIG"
-        sed -i '' 's/127.0.0.1/0.0.0.0/g' "$CLIENT"
+  sed -i '' 's/localhost/0.0.0.0/g' "$APP_TOML"
+  sed -i '' 's/localhost/0.0.0.0/g' "$CONFIG"
+  sed -i '' 's/localhost/0.0.0.0/g' "$CLIENT"
+  sed -i '' 's/127.0.0.1/0.0.0.0/g' "$APP_TOML"
+  sed -i '' 's/127.0.0.1/0.0.0.0/g' "$CONFIG"
+  sed -i '' 's/127.0.0.1/0.0.0.0/g' "$CLIENT"
+  sed -i '' 's/\[\]/["*"]/g' "$CONFIG"
+  sed -i '' 's/\["*",\]/["*"]/g' "$CONFIG"
+  sed -i '' 's/127.0.0.1/0.0.0.0/g' "$CLIENT"
 
+  # these are some of the node ids help to sync the node with p2p connections
+  sed -i '' 's/persistent_peers \s*=\s* ""/persistent_peers = "ad8e2053470a347d87f5125d54fe04d86155f7c4@159.138.134.250:26656,1cb538b9950c4f3ce89848101e6698bbf68ad40c@150.40.237.123:26656,41f8e8b5479374a21e69be09911a0c0dc6f41b23@49.0.247.123:26656"/g' "$CONFIG"
 
-	# these are some of the node ids help to sync the node with p2p connections
-	sed -i '' 's/persistent_peers \s*=\s* ""/persistent_peers = "ad8e2053470a347d87f5125d54fe04d86155f7c4@159.138.134.250:26656,1cb538b9950c4f3ce89848101e6698bbf68ad40c@150.40.237.123:26656,41f8e8b5479374a21e69be09911a0c0dc6f41b23@49.0.247.123:26656"/g' "$CONFIG"
+  # remove the genesis file from binary
+  rm -rf $HOMEDIR/config/genesis.json
 
-	# remove the genesis file from binary
-	rm -rf $HOMEDIR/config/genesis.json
-
-	# paste the genesis file 
-	cp $current_path/genesis.json $HOMEDIR/config
+  # paste the genesis file 
+  cp $current_path/genesis.json $HOMEDIR/config
 
   cd $HOMEDIR/data
 
-	# Run this to ensure everything worked and that the genesis file is setup correctly
-	qubeticsd validate-genesis --home "$HOMEDIR"
-  echo "export DAEMON_NAME=qubeticsd" >> ~/.zshrc
-  echo "export DAEMON_HOME="$HOMEDIR"" >> ~/.zshrc
-  source ~/.zshrc
+  # Run this to ensure everything worked and that the genesis file is setup correctly
+  qubeticsd validate-genesis --home "$HOMEDIR"
+  echo "export DAEMON_NAME=qubeticsd" >> ~/.profile
+  echo "export DAEMON_HOME=\"$HOMEDIR\"" >> ~/.profile
+  source ~/.profile
   echo $DAEMON_HOME
   echo $DAEMON_NAME
   cosmovisor init "${INSTALL_PATH}${BINARY}"
 
   ADDRESS=$(qubeticsd keys list --home $HOMEDIR --keyring-backend $KEYRING | grep "address" | cut -c12-)
-	qubeticsd debug addr "$ADDRESS" --home "$HOMEDIR" --keyring-backend "$KEYRING"
-WALLETADDRESS=$(qubeticsd debug addr "$ADDRESS" --home "$HOMEDIR" --keyring-backend "$KEYRING" | grep "Address hex:" | awk '{print $3}')
-	echo "========================================================================================================================"
-	echo "Qubetics Eth Hex Address==== "$WALLETADDRESS
-	echo "========================================================================================================================"
+  qubeticsd debug addr "$ADDRESS" --home "$HOMEDIR" --keyring-backend "$KEYRING"
+  WALLETADDRESS=$(qubeticsd debug addr "$ADDRESS" --home "$HOMEDIR" --keyring-backend "$KEYRING" | grep "Address hex:" | awk '{print $3}')
+  echo "========================================================================================================================"
+  echo "Qubetics Eth Hex Address==== "$WALLETADDRESS
+  echo "========================================================================================================================"
 fi
 
 #========================================================================================================================================================
@@ -169,6 +186,7 @@ sudo chown $USER "$PLIST_PATH"
 sudo chmod 644 "$PLIST_PATH"
 
 # Load and start the launch agent
+launchctl unload "$PLIST_PATH" 2>/dev/null || true
 launchctl load "$PLIST_PATH"
 launchctl start com.qubetics.myservice
 launchctl enable com.qubetics.myservice

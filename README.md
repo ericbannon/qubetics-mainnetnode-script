@@ -31,13 +31,13 @@ Open a terminal window and run the appropriate script for your OS:
 - For Ubuntu:
 
 ```bash
-./qubetics_ubuntu_node.sh
+./qubetics_ubuntu_node.sh  '<nodename>'  (eg. ./qubetics_ubuntu_node.sh galaxynode)
 ```
 
 - For macOS:
 
 ```bash
-./qubetics_mac_node.sh
+./qubetics_mac_node.sh '<nodename>'   (eg. ./qubetics_ubuntu_node.sh galaxynode)
 ```
 
 **Note:** The blockchain syncing runs as a background service. You can check the logs with the following commands:
