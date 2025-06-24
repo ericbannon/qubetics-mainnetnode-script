@@ -118,6 +118,10 @@ if [[ $overwrite == "y" || $overwrite == "Y" ]]; then
   sed -i '' 's/\["*",\]/["*"]/g' "$CONFIG"
   sed -i '' 's/127.0.0.1/0.0.0.0/g' "$CLIENT"
 
+  # Don't enable Rosetta API by default
+  grep -q -F '[rosetta]' "$APP_TOML" && sed -i '' '/\[rosetta\]/,/^\[/ s/enable = true/enable = false/' "$APP_TOML"
+  # Don't enable memiavl by default
+  grep -q -F '[memiavl]' "$APP_TOML" && sed -i '' '/\[memiavl\]/,/^\[/ s/enable = true/enable = false/' "$APP_TOML"
   # these are some of the node ids help to sync the node with p2p connections
   sed -i '' 's/persistent_peers \s*=\s* ""/persistent_peers = "ad8e2053470a347d87f5125d54fe04d86155f7c4@159.138.134.250:26656,1cb538b9950c4f3ce89848101e6698bbf68ad40c@150.40.237.123:26656,41f8e8b5479374a21e69be09911a0c0dc6f41b23@49.0.247.123:26656"/g' "$CONFIG"
 
