@@ -10,7 +10,7 @@ current_path=$(pwd)
 source $HOME/.bashrc
 ulimit -n 16384
 
-# go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@vlatest
+go install cosmossdk.io/tools/cosmovisor/cmd/cosmovisor@v1.5.0
 
 # Get OS and version
 OS=$(awk -F '=' '/^NAME/{print $2}' /etc/os-release | awk '{print $1}' | tr -d '"')
@@ -27,8 +27,8 @@ if [ "$OS" == "Ubuntu" ] && [ "$VERSION" == "22.04" -o "$VERSION" == "24.04" ]; 
   current_path=$(pwd)
   
   # Update package lists and install necessary packages
-  #sudo  apt-get update
-  #sudo apt-get install -y build-essential jq wget unzip
+  sudo  apt-get update
+  sudo apt-get install -y build-essential jq wget unzip
   
   # Check if the installation path exists
   if [ -d "$INSTALL_PATH" ]; then
@@ -196,18 +196,27 @@ sed -i 's/peer_gossip_sleep_duration = "100ms"/peer_gossip_sleep_duration = "10m
 fi
 
 #========================================================================================================================================================
-echo "Starting node with cosmovisor..."
+sudo su -c  "echo '[Unit]
+Description=qubetics Node
+Wants=network-online.target
+After=network-online.target
+[Service]
+User=$(whoami)
+Group=$(whoami)
+Type=simple
+ExecStart=/$(whoami)/go/bin/cosmovisor run start --home $DAEMON_HOME --json-rpc.api eth,txpool,personal,net,debug,web3
+Restart=always
+RestartSec=3
+LimitNOFILE=4096
+Environment="DAEMON_NAME=qubeticsd"
+Environment="DAEMON_HOME="$HOMEDIR""
+Environment="DAEMON_ALLOW_DOWNLOAD_BINARIES=false"
+Environment="DAEMON_RESTART_AFTER_UPGRADE=true"
+Environment="DAEMON_LOG_BUFFER_SIZE=512"
+Environment="UNSAFE_SKIP_BACKUP=false"
+[Install]
+WantedBy=multi-user.target'> /etc/systemd/system/qubeticschain.service"
 
-# Optional: Ensure cosmovisor is in PATH
-export PATH="$HOME/go/bin:$PATH"
-export DAEMON_NAME=qubeticsd
-export DAEMON_HOME="$HOMEDIR"
-export DAEMON_ALLOW_DOWNLOAD_BINARIES=false
-export DAEMON_RESTART_AFTER_UPGRADE=true
-export DAEMON_LOG_BUFFER_SIZE=512
-export UNSAFE_SKIP_BACKUP=false
-
-# Start the node
-exec cosmovisor run start \
-  --home "$DAEMON_HOME" \
-  --json-rpc.api eth,txpool,personal,net,debug,web3
+sudo systemctl daemon-reload
+sudo systemctl enable qubeticschain.service
+sudo systemctl start qubeticschain.service
