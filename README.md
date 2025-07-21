@@ -1,35 +1,74 @@
-# qubetics-ubuntu22.04-validator-docker
+# Setup Mainnet Qubetics Node
 
-## Description
-This is a working example of a Docker image that leverages Ubuntu 22.04 to run the Qubetics Mainnet Validator Node on any cloud environment, or hardware. 
+This repository contains a script for setting up a node on the Qubetics blockchain.
 
-## Key notes
+## Installation
 
-* Built as a amd64 image for x86 usage (No ARM support until supported upstream)
-* Installs Go 1.22.4 which coscmovisor@v1.5.0 relies on
-* Installs all prerequisites (eg. jq qget build-essential, etc..)
-* Sets ENV for all required PATHS
-* Leverages a modified qubetics_ubuntu_node.sh script that removes pre-requisite installations
-* Modifies the qubetics_ubuntu_node.sh script to start the qubeticsd directly from cosmovisor since systemctl is not supported in Docker
-* Can be run as amd64 on any ARM system (eg. raspberry pi 5) assuming qemu emulation is enabled
+### Prerequisites
 
-## Usage
+System Requirements:
+- 4 or more physical CPU cores
+- At least 1TB disk storage
+- At least 16GB of memory (RAM)
+- At least 100 Mbps network bandwidth
 
-If running on an ARM based system:
+### Clone this repository:
 
-```
-docker run -dit --platform=linux/amd64  --name validator-node   --restart unless-stopped   --privileged   --network host   bannimal/tics-validator-node:latest
+```bash
+git clone https://github.com/Qubetics/qubetics-mainnetnode-script.git
 ```
 
-If already running on x86 platform:
+### Install Go (if not already installed)
 
+Run the `install-go.sh` script. This script works for both macOS and Ubuntu.
+
+For macOS users, if Homebrew is not installed, please install it first `install-brew.sh`.
+
+## Setup a Node
+
+Open a terminal window and run the appropriate script for your OS:
+
+- For Ubuntu:
+
+```bash
+./qubetics_ubuntu_node.sh  '<nodename>'  (eg. ./qubetics_ubuntu_node.sh galaxynode)
 ```
-docker run -dit --name validator-node   --restart unless-stopped   --privileged   --network host   bannimal/tics-validator-node:latest
+
+- For macOS:
+
+```bash
+./qubetics_mac_node.sh '<nodename>'   (eg. ./qubetics_ubuntu_node.sh galaxynode)
 ```
 
-### Install Qubetics Validator Node
+**Note:** The blockchain syncing runs as a background service. You can check the logs with the following commands:
 
-bash -x qubetics_ubuntu_node.sh
+- Ubuntu:
 
-Enter in your node details and proceed to make note of any of the outpout - mnemonics & Node information
+```bash
+journalctl -u qubeticschain -f
+```
+s
+- macOS:
 
+```bash
+tail -f $HOME/logfile.log
+```
+
+### Important
+
+Copy your key mnemonics and save them in a safe place or you can generate a new with any evm wallet. The mnemonics are displayed at the top of the JSON output in the terminal.
+
+## Managing the Service
+
+To stop the service, use the following commands:
+
+- Ubuntu:
+
+```bash
+sudo systemctl stop qubeticschain.service
+```
+
+- macOS:
+
+```bash
+launchctl stop com.qubetics.myservice
